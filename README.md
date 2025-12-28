@@ -35,7 +35,7 @@ Each slot displays:
 - **Smart notifications**: Only receive alerts for your own tests
 - **Easy setup**: Simple bot commands for registration
 
-📘 **[Complete Telegram Setup Guide →](TELEGRAM_SETUP.md)**
+📘 **[Complete Telegram Setup Guide →](docs/TELEGRAM_SETUP.md)**
 
 ## 🚀 Quick Start
 
