@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Test Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #6b7c93 0%, #798897 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .nav-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #82b89a;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .content-area {
+            padding: 30px;
+            flex: 1;
+        }
+
+        .settings-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .settings-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-header {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e8ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f3f5;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            flex: 1;
+        }
+
+        .setting-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .setting-description {
+            font-size: 0.85em;
+            color: #7f8c8d;
+        }
+
+        .setting-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-input {
+            padding: 8px 12px;
+            border: 2px solid #e8ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 100px;
+            text-align: center;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #7fa9c9;
+        }
+
+        .setting-select {
+            padding: 8px 12px;
+            border: 2px solid #e8ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .setting-select:focus {
+            outline: none;
+            border-color: #7fa9c9;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #bdc3c7;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #82b89a;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: left 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            left: 27px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #7fa9c9;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #6d95b5;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .save-indicator {
+            display: none;
+            color: #82b89a;
+            font-size: 0.9em;
+            margin-left: 15px;
+        }
+
+        .save-indicator.show {
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>⚡ Test Dashboard</h1>
+            <p class="subtitle">Settings</p>
+        </div>
+        <a href="/" class="nav-item">
+            <span>🏠</span>
+            <span>Dashboard</span>
+        </a>
+        <a href="/bot-monitor" class="nav-item">
+            <span>🤖</span>
+            <span>Bot Monitor</span>
+        </a>
+        <a href="/serial-monitor" class="nav-item">
+            <span>🔌</span>
+            <span>Serial Monitor</span>
+        </a>
+        <a href="/settings" class="nav-item active">
+            <span>⚙️</span>
+            <span>Settings</span>
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="topbar">
+            <div class="topbar-title">⚙️ Settings</div>
+            <div>
+                <button class="btn btn-primary" onclick="saveSettings()">💾 Save Changes</button>
+                <span class="save-indicator" id="save-indicator">✓ Saved</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="settings-container">
+                <!-- Dashboard Settings -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <span>📊 Dashboard Settings</span>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Auto-Refresh</div>
+                            <div class="setting-description">Automatically refresh dashboard data</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="auto-refresh-toggle" onclick="toggleSetting(this)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Refresh Interval</div>
+                            <div class="setting-description">Time between automatic refreshes (seconds)</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" class="setting-input" id="refresh-interval" value="3" min="1" max="60">
+                            <span>seconds</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Default View Filter</div>
+                            <div class="setting-description">Default status filter when opening dashboard</div>
+                        </div>
+                        <div class="setting-control">
+                            <select class="setting-select" id="default-filter">
+                                <option value="all">All Slots</option>
+                                <option value="idle">Idle Only</option>
+                                <option value="running">Running Only</option>
+                                <option value="success">Success Only</option>
+                                <option value="failed">Failed Only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Compact Action Buttons</div>
+                            <div class="setting-description">Show icons only (more compact)</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch active" id="compact-buttons-toggle" onclick="toggleSetting(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Settings -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <span>🔔 Notification Settings</span>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Browser Notifications</div>
+                            <div class="setting-description">Show browser notifications for test events</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="browser-notif-toggle" onclick="toggleSetting(this)"></div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Sound Alerts</div>
+                            <div class="setting-description">Play sound when tests complete or fail</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="sound-alerts-toggle" onclick="toggleSetting(this)"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Settings -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <span>🎨 Display Settings</span>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Time Format</div>
+                            <div class="setting-description">Display format for timestamps</div>
+                        </div>
+                        <div class="setting-control">
+                            <select class="setting-select" id="time-format">
+                                <option value="12h">12-hour (2:30 PM)</option>
+                                <option value="24h">24-hour (14:30)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Date Format</div>
+                            <div class="setting-description">Display format for dates</div>
+                        </div>
+                        <div class="setting-control">
+                            <select class="setting-select" id="date-format">
+                                <option value="ymd">YYYY/MM/DD</option>
+                                <option value="mdy">MM/DD/YYYY</option>
+                                <option value="dmy">DD/MM/YYYY</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Settings -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <span>🔧 Advanced Settings</span>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Debug Mode</div>
+                            <div class="setting-description">Show additional debugging information</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" id="debug-mode-toggle" onclick="toggleSetting(this)"></div>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Log Retention</div>
+                            <div class="setting-description">Days to keep test logs</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" class="setting-input" id="log-retention" value="30" min="1" max="365">
+                            <span>days</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <div class="setting-title">Clear All Data</div>
+                            <div class="setting-description">Reset all slots and remove test data</div>
+                        </div>
+                        <div class="setting-control">
+                            <button class="btn btn-secondary" onclick="clearAllData()">Clear All</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load settings from localStorage
+        function loadSettings() {
+            const settings = {
+                autoRefresh: localStorage.getItem('autoRefresh') !== 'false',
+                refreshInterval: parseInt(localStorage.getItem('refreshInterval') || '3'),
+                defaultFilter: localStorage.getItem('defaultFilter') || 'all',
+                compactButtons: localStorage.getItem('compactButtons') !== 'false',
+                browserNotifications: localStorage.getItem('browserNotifications') === 'true',
+                soundAlerts: localStorage.getItem('soundAlerts') === 'true',
+                timeFormat: localStorage.getItem('timeFormat') || '24h',
+                dateFormat: localStorage.getItem('dateFormat') || 'ymd',
+                debugMode: localStorage.getItem('debugMode') === 'true',
+                logRetention: parseInt(localStorage.getItem('logRetention') || '30')
+            };
+
+            // Apply loaded settings to UI
+            document.getElementById('auto-refresh-toggle').classList.toggle('active', settings.autoRefresh);
+            document.getElementById('refresh-interval').value = settings.refreshInterval;
+            document.getElementById('default-filter').value = settings.defaultFilter;
+            document.getElementById('compact-buttons-toggle').classList.toggle('active', settings.compactButtons);
+            document.getElementById('browser-notif-toggle').classList.toggle('active', settings.browserNotifications);
+            document.getElementById('sound-alerts-toggle').classList.toggle('active', settings.soundAlerts);
+            document.getElementById('time-format').value = settings.timeFormat;
+            document.getElementById('date-format').value = settings.dateFormat;
+            document.getElementById('debug-mode-toggle').classList.toggle('active', settings.debugMode);
+            document.getElementById('log-retention').value = settings.logRetention;
+        }
+
+        // Toggle switch
+        function toggleSetting(element) {
+            element.classList.toggle('active');
+        }
+
+        // Save settings
+        function saveSettings() {
+            const settings = {
+                autoRefresh: document.getElementById('auto-refresh-toggle').classList.contains('active'),
+                refreshInterval: document.getElementById('refresh-interval').value,
+                defaultFilter: document.getElementById('default-filter').value,
+                compactButtons: document.getElementById('compact-buttons-toggle').classList.contains('active'),
+                browserNotifications: document.getElementById('browser-notif-toggle').classList.contains('active'),
+                soundAlerts: document.getElementById('sound-alerts-toggle').classList.contains('active'),
+                timeFormat: document.getElementById('time-format').value,
+                dateFormat: document.getElementById('date-format').value,
+                debugMode: document.getElementById('debug-mode-toggle').classList.contains('active'),
+                logRetention: document.getElementById('log-retention').value
+            };
+
+            // Save to localStorage
+            Object.keys(settings).forEach(key => {
+                localStorage.setItem(key, settings[key]);
+            });
+
+            // Show save indicator
+            const indicator = document.getElementById('save-indicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+
+            console.log('Settings saved:', settings);
+        }
+
+        // Clear all data
+        function clearAllData() {
+            if (!confirm('Are you sure you want to clear all slot data? This cannot be undone!')) {
+                return;
+            }
+
+            if (!confirm('This will reset all slots and remove all test data. Are you absolutely sure?')) {
+                return;
+            }
+
+            // Call API to clear all slots
+            fetch('/api/slots/clear-all', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert('All data cleared successfully!');
+                })
+                .catch(error => {
+                    console.error('Error clearing data:', error);
+                    alert('Failed to clear data. Check console for details.');
+                });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            loadSettings();
+        });
+    </script>
+</body>
+
+</html>

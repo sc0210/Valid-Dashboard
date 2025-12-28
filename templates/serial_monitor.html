@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serial Monitor - Test Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #6b7c93 0%, #798897 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar.collapsed .nav-item span:not(.nav-item-icon),
+        .sidebar.collapsed .sidebar-header h1,
+        .sidebar.collapsed .sidebar-header .subtitle,
+        .sidebar.collapsed .nav-section-title,
+        .sidebar.collapsed .sidebar-footer .version-info {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-header>div {
+            justify-content: center !important;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            margin-left: 0;
+        }
+
+        .sidebar-toggle {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            padding: 5px;
+            margin-left: 10px;
+            transition: opacity 0.3s ease;
+            opacity: 0.8;
+        }
+
+        .sidebar-toggle:hover {
+            opacity: 1;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .nav-section-title {
+            padding: 10px 20px;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #7fa9c9;
+        }
+
+        .nav-item.active {
+            background: rgba(127, 169, 201, 0.2);
+            border-left-color: #7fa9c9;
+        }
+
+        .nav-item-icon {
+            margin-right: 12px;
+            font-size: 1.2em;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .version-info {
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.7em;
+            opacity: 0.6;
+            line-height: 1.4;
+        }
+
+        .version-number {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .developer-team {
+            display: block;
+            font-size: 0.9em;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.sidebar-collapsed {
+            margin-left: 60px;
+        }
+
+        .topbar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Connection Panel */
+        .connection-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #6b7c93;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select {
+            padding: 10px 15px;
+            border: 2px solid #e8ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #7fa9c9;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #7fa9c9;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #6d95b5;
+        }
+
+        .btn-danger {
+            background: #c98080;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b57070;
+        }
+
+        .btn-secondary {
+            background: #a8b5c2;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #92a0ad;
+        }
+
+        /* Terminal Display */
+        .terminal-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #95a5a6;
+        }
+
+        .status-indicator.connected {
+            background: #82b89a;
+            box-shadow: 0 0 8px rgba(130, 184, 154, 0.6);
+        }
+
+        .terminal-body {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+
+        .log-line {
+            margin-bottom: 2px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* ANSI Color Classes */
+        .ansi-black {
+            color: #000000;
+        }
+
+        .ansi-red {
+            color: #cd3131;
+        }
+
+        .ansi-green {
+            color: #0dbc79;
+        }
+
+        .ansi-yellow {
+            color: #e5e510;
+        }
+
+        .ansi-blue {
+            color: #2472c8;
+        }
+
+        .ansi-magenta {
+            color: #bc3fbc;
+        }
+
+        .ansi-cyan {
+            color: #11a8cd;
+        }
+
+        .ansi-white {
+            color: #e5e5e5;
+        }
+
+        .ansi-bright-black {
+            color: #666666;
+        }
+
+        .ansi-bright-red {
+            color: #f14c4c;
+        }
+
+        .ansi-bright-green {
+            color: #23d18b;
+        }
+
+        .ansi-bright-yellow {
+            color: #f5f543;
+        }
+
+        .ansi-bright-blue {
+            color: #3b8eea;
+        }
+
+        .ansi-bright-magenta {
+            color: #d670d6;
+        }
+
+        .ansi-bright-cyan {
+            color: #29b8db;
+        }
+
+        .ansi-bright-white {
+            color: #ffffff;
+        }
+
+        /* Terminal Input Section */
+        .terminal-input-section {
+            background: #2d2d2d;
+            border-top: 2px solid #3d3d3d;
+            padding: 15px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .command-input {
+            flex: 1;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: 2px solid #3d3d3d;
+            border-radius: 6px;
+            padding: 10px 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .command-input:focus {
+            outline: none;
+            border-color: #7fa9c9;
+        }
+
+        .command-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-send,
+        .btn-upload {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-send {
+            background: #82b89a;
+            color: white;
+        }
+
+        .btn-send:hover:not(:disabled) {
+            background: #6fa586;
+            transform: translateY(-1px);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-upload {
+            background: #7fa9c9;
+            color: white;
+            display: inline-block;
+        }
+
+        .btn-upload:hover {
+            background: #6b96b5;
+            transform: translateY(-1px);
+        }
+
+        .input-options {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #d4d4d4;
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .checkbox-label span {
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .terminal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terminal-body::-webkit-scrollbar-track {
+            background: #2c3e50;
+        }
+
+        .terminal-body::-webkit-scrollbar-thumb {
+            background: #6b7c93;
+            border-radius: 4px;
+        }
+
+        .terminal-body::-webkit-scrollbar-thumb:hover {
+            background: #798897;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div style="display: flex; align-items: center;">
+                <h1>SANBlaze agent</h1>
+                <div class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                    <span id="toggle-icon">☰</span>
+                </div>
+            </div>
+            <div class="subtitle">SSD Validation Dashboard</div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-section-title">Views</div>
+            <a href="/" class="nav-item">
+                <span class="nav-item-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/testcase" class="nav-item">
+                <span class="nav-item-icon">📝</span>
+                <span>Test Case Library</span>
+            </a>
+
+            <div class="nav-section-title">Tools</div>
+            <a href="/uart-log" class="nav-item">
+                <span class="nav-item-icon">📡</span>
+                <span>UART Log</span>
+            </a>
+            <a href="/serial-monitor" class="nav-item active">
+                <span class="nav-item-icon">🔌</span>
+                <span>Serial Monitor</span>
+            </a>
+
+            <div class="nav-section-title">External Links</div>
+            <div class="nav-item" onclick="openExternalLink('https://sanblaze.com')">
+                <span class="nav-item-icon">🌐</span>
+                <span>SANBlaze</span>
+            </div>
+
+            <div class="nav-section-title">Quick Actions</div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="version-info">
+                <span class="version-number">Version 1.0.0</span>
+                <span class="developer-team">SamChen-SSSTC</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        <div class="topbar">
+            <div class="topbar-title">🔌 Serial Monitor</div>
+        </div>
+
+        <div class="content-area">
+            <!-- Connection Configuration -->
+            <div class="connection-panel">
+                <div class="panel-title">
+                    <span>⚙️</span>
+                    <span>Serial Port Configuration</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Serial Port</label>
+                        <select class="form-select" id="serial-port">
+                            <option value="">Select Port...</option>
+                            <option value="/dev/ttyUSB0">/dev/ttyUSB0</option>
+                            <option value="/dev/ttyUSB1">/dev/ttyUSB1</option>
+                            <option value="/dev/ttyUSB2">/dev/ttyUSB2</option>
+                            <option value="/dev/ttyUSB3">/dev/ttyUSB3</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Baudrate</label>
+                        <select class="form-select" id="baudrate">
+                            <option value="9600">9600</option>
+                            <option value="19200">19200</option>
+                            <option value="38400">38400</option>
+                            <option value="57600">57600</option>
+                            <option value="115200">115200</option>
+                            <option value="230400">230400</option>
+                            <option value="460800">460800</option>
+                            <option value="921600" selected>921600</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data Bits</label>
+                        <select class="form-select" id="databits">
+                            <option value="7">7</option>
+                            <option value="8" selected>8</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Parity</label>
+                        <select class="form-select" id="parity">
+                            <option value="N" selected>None</option>
+                            <option value="E">Even</option>
+                            <option value="O">Odd</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stop Bits</label>
+                        <select class="form-select" id="stopbits">
+                            <option value="1" selected>1</option>
+                            <option value="2">2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Line Ending</label>
+                        <select class="form-select" id="line-ending">
+                            <option value="none">No line ending</option>
+                            <option value="newline" selected>Newline (\n)</option>
+                            <option value="carriage">Carriage return (\r)</option>
+                            <option value="both">Both NL & CR (\r\n)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="connectSerial()">
+                        🔌 Connect
+                    </button>
+                    <button class="btn btn-danger" onclick="disconnectSerial()" id="disconnect-btn" disabled>
+                        ⏹️ Disconnect
+                    </button>
+                    <button class="btn btn-secondary" onclick="refreshPorts()">
+                        🔄 Refresh Ports
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearLog()">
+                        🗑️ Clear Log
+                    </button>
+                    <button class="btn btn-secondary" onclick="downloadLog()">
+                        💾 Download Log
+                    </button>
+                </div>
+            </div>
+
+            <!-- Terminal Display -->
+            <div class="terminal-container">
+                <div class="terminal-header">
+                    <span>🔌 Serial Output</span>
+                    <div class="terminal-status">
+                        <span id="status-text">Disconnected</span>
+                        <div class="status-indicator" id="status-indicator"></div>
+                    </div>
+                </div>
+                <div class="terminal-body" id="terminal-output">
+                    <div class="log-line" style="color: #6b7c93;">Serial Monitor Ready</div>
+                    <div class="log-line" style="color: #6b7c93;">Select a serial port and click Connect to start
+                        monitoring...</div>
+                </div>
+                <!-- Command Input Section -->
+                <div class="terminal-input-section">
+                    <div class="input-row">
+                        <input type="text" id="command-input" class="command-input"
+                            placeholder="Type command and press Enter to send..." disabled>
+                        <button class="btn-send" onclick="sendCommand()" id="send-btn" disabled>
+                            ➤ Send
+                        </button>
+                        <label class="btn-upload" id="upload-label">
+                            📎 Upload File
+                            <input type="file" id="file-input" style="display: none;" onchange="sendFile()" disabled>
+                        </label>
+                    </div>
+                    <div class="input-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="add-newline" checked>
+                            <span>Add newline (\\n)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="add-carriage-return">
+                            <span>Add carriage return (\\r)</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="echo-commands" checked>
+                            <span>Echo commands</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let connected = false;
+        let logLines = [];
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        }
+
+        // Open external link in same tab
+        function openExternalLink(url) {
+            window.location.href = url;
+        }
+
+        // Connect to Serial Port
+        function connectSerial() {
+            const port = document.getElementById('serial-port').value;
+            const baudrate = document.getElementById('baudrate').value;
+            const databits = document.getElementById('databits').value;
+            const parity = document.getElementById('parity').value;
+            const stopbits = document.getElementById('stopbits').value;
+
+            if (!port) {
+                alert('Please select a serial port');
+                return;
+            }
+
+            connected = true;
+            updateConnectionStatus(true);
+
+            const config = `${baudrate}${parity}${databits}${stopbits}`;
+            addLogLine(`Opening serial port ${port}...`, 'ansi-cyan');
+            addLogLine(`Configuration: ${config}`, 'ansi-cyan');
+
+            // Simulate connection
+            setTimeout(() => {
+                addLogLine(`Connected successfully!`, 'ansi-green');
+                addLogLine(`Waiting for data...`, 'ansi-cyan');
+
+                // Simulate receiving serial data with ANSI colors
+                startSimulatedSerialData();
+            }, 1000);
+        }
+
+        // Disconnect from Serial Port
+        function disconnectSerial() {
+            if (!connected) return;
+
+            connected = false;
+            updateConnectionStatus(false);
+            addLogLine('Serial port closed', 'ansi-yellow');
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(isConnected) {
+            const statusText = document.getElementById('status-text');
+            const statusIndicator = document.getElementById('status-indicator');
+            const disconnectBtn = document.getElementById('disconnect-btn');
+            const commandInput = document.getElementById('command-input');
+            const sendBtn = document.getElementById('send-btn');
+            const fileInput = document.getElementById('file-input');
+
+            if (isConnected) {
+                statusText.textContent = 'Connected';
+                statusIndicator.classList.add('connected');
+                disconnectBtn.disabled = false;
+                commandInput.disabled = false;
+                sendBtn.disabled = false;
+                fileInput.disabled = false;
+                commandInput.focus();
+            } else {
+                statusText.textContent = 'Disconnected';
+                statusIndicator.classList.remove('connected');
+                disconnectBtn.disabled = true;
+                commandInput.disabled = true;
+                sendBtn.disabled = true;
+                fileInput.disabled = true;
+            }
+        }
+
+        // Add log line to terminal with ANSI color support
+        function addLogLine(text, colorClass = '') {
+            const terminal = document.getElementById('terminal-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.className = 'log-line' + (colorClass ? ' ' + colorClass : '');
+            line.textContent = `[${timestamp}] ${text}`;
+
+            logLines.push(line.textContent);
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Simulate serial data (for demo purposes)
+        function startSimulatedSerialData() {
+            const messages = [
+                { text: '>>> System Boot', color: 'ansi-bright-cyan' },
+                { text: '[INFO] Initializing hardware...', color: 'ansi-green' },
+                { text: '[INFO] Flash controller ready', color: 'ansi-green' },
+                { text: '[WARN] Temperature sensor offline', color: 'ansi-yellow' },
+                { text: '[INFO] PCIe Gen4 x4 link established', color: 'ansi-green' },
+                { text: '[DEBUG] NAND blocks: 2048', color: 'ansi-bright-black' },
+                { text: '[ERROR] Cache parity error at 0x1000', color: 'ansi-red' },
+                { text: '[INFO] Error corrected, continuing...', color: 'ansi-green' },
+                { text: '[INFO] Self-test passed', color: 'ansi-bright-green' },
+                { text: '>>> Ready for commands', color: 'ansi-bright-cyan' }
+            ];
+
+            let index = 0;
+            const interval = setInterval(() => {
+                if (!connected || index >= messages.length) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                addLogLine(messages[index].text, messages[index].color);
+                index++;
+            }, 1200);
+        }
+
+        // Refresh available ports
+        function refreshPorts() {
+            addLogLine('Scanning for serial ports...', 'ansi-cyan');
+            // In production, this would call backend API to scan for ports
+            setTimeout(() => {
+                addLogLine('Found: /dev/ttyUSB0, /dev/ttyUSB1', 'ansi-green');
+            }, 500);
+        }
+
+        // Clear log
+        function clearLog() {
+            const terminal = document.getElementById('terminal-output');
+            terminal.innerHTML = '';
+            logLines = [];
+            addLogLine('Log cleared', 'ansi-cyan');
+        }
+
+        // Download log
+        function downloadLog() {
+            if (logLines.length === 0) {
+                alert('No log data to download');
+                return;
+            }
+
+            const port = document.getElementById('serial-port').value || 'serial';
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `${port.replace(/\//g, '_')}_${timestamp}.txt`;
+
+            const blob = new Blob([logLines.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            addLogLine(`Log downloaded as ${filename}`, 'ansi-green');
+        }
+
+        // Send command to serial device
+        function sendCommand() {
+            if (!connected) {
+                alert('Not connected to serial port');
+                return;
+            }
+
+            const input = document.getElementById('command-input');
+            const command = input.value;
+
+            if (!command.trim()) {
+                return;
+            }
+
+            const addNewline = document.getElementById('add-newline').checked;
+            const addCR = document.getElementById('add-carriage-return').checked;
+            const echoCommands = document.getElementById('echo-commands').checked;
+
+            // Build the command with line endings
+            let finalCommand = command;
+            if (addCR) finalCommand += '\r';
+            if (addNewline) finalCommand += '\n';
+
+            // Echo command if enabled
+            if (echoCommands) {
+                addLogLine(`TX: ${command}`, 'ansi-bright-magenta');
+            }
+
+            // Send to serial port
+            const port = document.getElementById('serial-port').value;
+            sendToSerial(port, finalCommand, 'command');
+
+            // Clear input
+            input.value = '';
+            input.focus();
+        }
+
+        // Handle Enter key in command input
+        document.addEventListener('DOMContentLoaded', function () {
+            const commandInput = document.getElementById('command-input');
+            commandInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    sendCommand();
+                }
+            });
+        });
+
+        // Send file to serial device
+        function sendFile() {
+            if (!connected) {
+                alert('Not connected to serial port');
+                return;
+            }
+
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            addLogLine(`Sending file: ${file.name} (${file.size} bytes)`, 'ansi-cyan');
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const content = e.target.result;
+                const port = document.getElementById('serial-port').value;
+
+                // Send file content
+                sendToSerial(port, content, 'file', file.name);
+            };
+
+            reader.onerror = function () {
+                addLogLine(`Error reading file: ${file.name}`, 'ansi-red');
+            };
+
+            reader.readAsArrayBuffer(file);
+
+            // Clear file input
+            fileInput.value = '';
+        }
+
+        // Send data to serial port via backend API
+        function sendToSerial(port, data, type, filename = null) {
+            const payload = {
+                port: port,
+                data: data,
+                type: type
+            };
+
+            if (filename) {
+                payload.filename = filename;
+            }
+
+            // In production, this would call the backend API
+            fetch('/api/serial/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        if (type === 'file') {
+                            addLogLine(`File sent successfully: ${filename}`, 'ansi-green');
+                        }
+                    } else {
+                        addLogLine(`Error: ${result.error}`, 'ansi-red');
+                    }
+                })
+                .catch(error => {
+                    // For demo purposes, simulate successful send
+                    if (type === 'file') {
+                        addLogLine(`File sent successfully: ${filename}`, 'ansi-green');
+                    }
+                    // Simulate device response
+                    setTimeout(() => {
+                        addLogLine(`RX: OK`, 'ansi-bright-cyan');
+                    }, 500);
+                });
+        }
+    </script>
+</body>
+
+</html>

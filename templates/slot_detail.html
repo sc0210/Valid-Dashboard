@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot Detail - Test Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar - Exact same as dashboard */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #6b7c93 0%, #798897 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar.collapsed .nav-item span:not(.nav-item-icon),
+        .sidebar.collapsed .sidebar-header h1,
+        .sidebar.collapsed .sidebar-header .subtitle,
+        .sidebar.collapsed .nav-section-title,
+        .sidebar.collapsed .sidebar-footer .stats-mini,
+        .sidebar.collapsed .sidebar-footer .version-info {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-header>div {
+            justify-content: center !important;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            margin-left: 0;
+        }
+
+        .sidebar-toggle {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            padding: 5px;
+            margin-left: 10px;
+            transition: opacity 0.3s ease;
+            opacity: 0.8;
+        }
+
+        .sidebar-toggle:hover {
+            opacity: 1;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .nav-section-title {
+            padding: 10px 20px;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #7fa9c9;
+        }
+
+        .nav-item.active {
+            background: rgba(127, 169, 201, 0.2);
+            border-left-color: #7fa9c9;
+        }
+
+        .nav-item-icon {
+            margin-right: 12px;
+            font-size: 1.2em;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .stats-mini {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+
+        .stat-mini {
+            text-align: center;
+        }
+
+        .stat-mini-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-mini-label {
+            font-size: 0.7em;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        .version-info {
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.7em;
+            opacity: 0.6;
+            line-height: 1.4;
+        }
+
+        .version-number {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .developer-team {
+            display: block;
+            font-size: 0.9em;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.sidebar-collapsed {
+            margin-left: 60px;
+        }
+
+        .page-header {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e8ecef;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-header h2 {
+            font-size: 1.5em;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-link {
+            color: #7fa9c9;
+            text-decoration: none;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .back-link:hover {
+            color: #6d95b5;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Slot Detail Card */
+        .detail-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .detail-card-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #8fa5ba 0%, #9b8fa5 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slot-title-large {
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        /* LED Status Indicator */
+        .status-led-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-led {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-led.idle {
+            background: #a8b5c2;
+            box-shadow: 0 0 5px rgba(168, 181, 194, 0.5);
+        }
+
+        .status-led.running {
+            background: #ff9800;
+            box-shadow: 0 0 8px rgba(255, 152, 0, 0.8);
+            animation: breathingPulse 2s ease-in-out infinite;
+        }
+
+        .status-led.success {
+            background: #82b89a;
+            box-shadow: 0 0 8px rgba(130, 184, 154, 0.8);
+        }
+
+        .status-led.failed {
+            background: #c98080;
+            box-shadow: 0 0 8px rgba(201, 128, 128, 0.8);
+        }
+
+        .status-led.stopping {
+            background: #d4a574;
+            box-shadow: 0 0 8px rgba(212, 165, 116, 0.8);
+        }
+
+        @keyframes breathingPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                box-shadow: 0 0 8px rgba(255, 152, 0, 0.8);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(0.95);
+                box-shadow: 0 0 15px rgba(255, 152, 0, 1);
+            }
+        }
+
+        .status-text {
+            font-size: 1em;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .detail-card-body {
+            padding: 25px;
+        }
+
+        /* Info Table */
+        .info-table-container {
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e6ed;
+        }
+
+        .info-table tr {
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        .info-table tr:last-child {
+            border-bottom: none;
+        }
+
+        .info-table td {
+            padding: 10px 15px;
+            font-size: 0.9em;
+        }
+
+        .info-table td:first-child {
+            font-weight: 600;
+            color: #5a6c7d;
+            background: #f8f9fb;
+            width: 40%;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .info-table td:last-child {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .info-value.empty {
+            color: #bdc3c7;
+            font-style: italic;
+        }
+
+        /* Progress Section - Compact */
+        .progress-section {
+            padding: 15px 20px;
+            background: #f8fafb;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .progress-label {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #6b7c93;
+            white-space: nowrap;
+            min-width: 100px;
+        }
+
+        .progress-bar-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .progress-percentage {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #7fa9c9;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .progress-bar-bg {
+            flex: 1;
+            height: 10px;
+            background: #e8ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7fa9c9 0%, #82b89a 100%);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        /* Action Buttons Section */
+        .actions-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .action-group {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e8ecf1;
+        }
+
+        .action-group-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #5a6c7d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .action-btn.stop {
+            background: #c98080;
+            color: white;
+        }
+
+        .action-btn.stop:hover {
+            background: #b57070;
+        }
+
+        .action-btn.reset {
+            background: #a8b5c2;
+            color: white;
+        }
+
+        .action-btn.reset:hover {
+            background: #92a0ad;
+        }
+
+        .action-btn.launch {
+            background: #7fa9c9;
+            color: white;
+        }
+
+        .action-btn.launch:hover {
+            background: #6d95b5;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Keyboard Shortcut Hint */
+        .keyboard-hint {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .action-btn:disabled .keyboard-hint {
+            display: none;
+        }
+
+        .shortcuts-info {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f8f9fb;
+            border-radius: 6px;
+            font-size: 0.75em;
+            color: #6b7c93;
+            border-left: 3px solid #7fa9c9;
+        }
+
+        .shortcuts-info code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #c98080;
+            border: 1px solid #e0e6ed;
+        }
+
+        /* Terminal & Logs Section */
+        .panels-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel {
+            background: #1e1e1e;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel.collapsed .panel-content {
+            display: none;
+        }
+
+        .panel-header {
+            background: #2d2d2d;
+            padding: 12px 20px;
+            color: #e0e0e0;
+            font-weight: 600;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #3d3d3d;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .panel-header:hover {
+            background: #353535;
+        }
+
+        .panel-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-toggle {
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+
+        .panel.collapsed .panel-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .panel-icon {
+            font-size: 1.2em;
+        }
+
+        .panel-content {
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #d4d4d4;
+            max-height: 400px;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .log-line {
+            margin-bottom: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .log-line.error {
+            color: #c98080;
+        }
+
+        .log-line.success {
+            color: #82b89a;
+        }
+
+        .log-line.progress {
+            color: #7fa9c9;
+            font-weight: 600;
+        }
+
+        .log-line.timestamp {
+            color: #888;
+        }
+
+        /* UART log keyword highlighting */
+        .log-line.uart-error {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .log-line.uart-warn {
+            color: #ffd93d;
+        }
+
+        .log-line.uart-info {
+            color: #82b89a;
+        }
+
+        .log-line.uart-data {
+            color: #6bcbef;
+        }
+
+        .log-line.uart-tx {
+            color: #c678dd;
+        }
+
+        .log-line.uart-rx {
+            color: #56b6c2;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .empty-state-text {
+            font-size: 0.95em;
+        }
+
+        /* Scrollbar Styling */
+        .panel-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .panel-content::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        .panel-content::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .panel-content::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        @media (max-width: 1200px) {
+            .panels-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar (same as dashboard) -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div style="display: flex; align-items: center;">
+                <h1>SANBlaze agent</h1>
+                <div class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                    <span id="toggle-icon">☰</span>
+                </div>
+            </div>
+            <div class="subtitle">Slot Detail View</div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-section-title">Views</div>
+            <a href="/" class="nav-item">
+                <span class="nav-item-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/testcase" class="nav-item">
+                <span class="nav-item-icon">📝</span>
+                <span>Test Case Library</span>
+            </a>
+
+            <div class="nav-section-title">Tools</div>
+            <a href="/uart-log" class="nav-item">
+                <span class="nav-item-icon">📡</span>
+                <span>UART Log</span>
+            </a>
+            <a href="/serial-monitor" class="nav-item">
+                <span class="nav-item-icon">🔌</span>
+                <span>Serial Monitor</span>
+            </a>
+
+            <div class="nav-section-title">External Links</div>
+            <div class="nav-item" onclick="openExternalLink('https://sanblaze.com')">
+                <span class="nav-item-icon">🌐</span>
+                <span>SANBlaze</span>
+            </div>
+
+            <div class="nav-section-title">Quick Actions</div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="stats-mini">
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="stat-idle">16</span>
+                    <span class="stat-mini-label">Idle</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="stat-running">0</span>
+                    <span class="stat-mini-label">Running</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="stat-completed">0</span>
+                    <span class="stat-mini-label">Complete</span>
+                </div>
+            </div>
+            <div class="version-info">
+                <span class="version-number">v1.0.0</span>
+                <span class="developer-team">CCPX | FWX | SamChen-SSSTC</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (same layout as dashboard) -->
+    <div class="main-content" id="main-content">
+        <div class="page-header">
+            <h2>
+                <a href="/" class="back-link"
+                    style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;">
+                    <span>←</span>
+                    <span>Back to Dashboard</span>
+                </a>
+            </h2>
+            <div style="opacity: 0.6; font-size: 0.9em;">
+                Slot <span id="slotId">0</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Slot Detail Card -->
+            <div class="detail-card">
+                <div class="detail-card-header">
+                    <div class="slot-title-large">Slot <span id="slotIdTitle">0</span></div>
+                    <div class="status-led-container">
+                        <div class="status-led idle" id="statusLed"></div>
+                        <span class="status-text" id="statusText">idle</span>
+                    </div>
+                </div>
+                <div class="detail-card-body">
+                    <!-- Info Table -->
+                    <div class="info-table-container">
+                        <table class="info-table">
+                            <tr>
+                                <td>Owner</td>
+                                <td id="infoOwner">-</td>
+                            </tr>
+                            <tr>
+                                <td>Test Case</td>
+                                <td id="infoTestCase">-</td>
+                            </tr>
+                            <tr>
+                                <td>Script Path</td>
+                                <td id="infoScriptPath">-</td>
+                            </tr>
+                            <tr>
+                                <td>Start Time</td>
+                                <td id="infoStartTime">-</td>
+                            </tr>
+                        </table>
+
+                        <table class="info-table">
+                            <tr>
+                                <td>SSD Serial</td>
+                                <td id="infoSsdSerial">-</td>
+                            </tr>
+                            <tr>
+                                <td>SSD EUI</td>
+                                <td id="infoSsdEui">-</td>
+                            </tr>
+                            <tr>
+                                <td>Process ID</td>
+                                <td id="infoPid">-</td>
+                            </tr>
+                            <tr>
+                                <td>Remote Log</td>
+                                <td id="infoRemoteLog">-</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div class="progress-section">
+                        <div class="progress-label">Test Progress</div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                            </div>
+                            <div class="progress-percentage" id="progressPercentage">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Actions Section -->
+                    <div class="actions-section">
+                        <div class="action-group">
+                            <div class="action-group-title">Test Control</div>
+                            <div class="action-buttons">
+                                <button class="action-btn stop" id="stopBtn" onclick="stopTest()" disabled>
+                                    <span>⏹</span> Stop Test<span class="keyboard-hint">Ctrl+C</span>
+                                </button>
+                                <button class="action-btn reset" id="resetBtn" onclick="resetSlot()">
+                                    <span>🔄</span> Reset<span class="keyboard-hint">Ctrl+R</span>
+                                </button>
+                            </div>
+                            <div class="shortcuts-info">
+                                <strong>💡 Keyboard Shortcuts:</strong> Press <code>Ctrl+C</code> to stop running test |
+                                <code>Ctrl+R</code> to reset slot
+                            </div>
+                        </div>
+
+                        <div class="action-group">
+                            <div class="action-group-title">Tools</div>
+                            <div class="action-buttons">
+                                <button class="action-btn tool" onclick="testTelegramConnection()" id="telegramTestBtn">
+                                    <span>📱</span> Test Connection
+                                </button>
+                                <button class="action-btn tool" onclick="sendFailNotification()" id="telegramNotifyBtn"
+                                    disabled>
+                                    <span>🚨</span> Notify Fail
+                                </button>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 0.85em; color: #7a8fa0;">
+                                <span id="telegramStatus"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal & Logs Panels (Vertical, Collapsible) -->
+            <div class="panels-container">
+                <!-- Terminal Output Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <div class="panel-header-left">
+                            <span class="panel-icon">💻</span>
+                            <span>Terminal Output</span>
+                        </div>
+                        <span class="panel-toggle">▼</span>
+                    </div>
+                    <div class="panel-content" id="terminalOutput">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📟</div>
+                            <div class="empty-state-text">No script running</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UART Logs Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <div class="panel-header-left">
+                            <span class="panel-icon">📡</span>
+                            <span>UART Logs</span>
+                            <span id="uart-log-path"
+                                style="margin-left: 10px; font-size: 0.85em; color: #a8b5c2;"></span>
+                        </div>
+                        <span class="panel-toggle">▼</span>
+                    </div>
+                    <div class="panel-content" id="uartLogOutput" style="display: flex; flex-direction: column;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📄</div>
+                            <div class="empty-state-text">Logs will appear when test starts</div>
+                        </div>
+                    </div>
+                    <div class="uart-input-container"
+                        style="padding: 10px; border-top: 1px solid #e8ecef; background: #f9fafb; display: none;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="text" id="uart-command-input" placeholder="Type command and press Enter..."
+                                style="flex: 1; padding: 8px; border: 1px solid #dfe1e6; border-radius: 4px; font-family: 'Monaco', 'Courier New', monospace; font-size: 0.9em;">
+                            <button onclick="sendUartCommand()"
+                                style="padding: 8px 16px; background: #8fa5ba; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Send</button>
+                        </div>
+                        <div style="margin-top: 8px; display: flex; gap: 12px; font-size: 0.85em;">
+                            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" id="uart-add-newline" checked>
+                                <span>Add \\n</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" id="uart-add-cr">
+                                <span>Add \\r</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                <input type="checkbox" id="uart-echo-commands" checked>
+                                <span>Echo commands</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSV Logs Panel -->
+                <div class="panel">
+                    <div class="panel-header" onclick="togglePanel(this)">
+                        <div class="panel-header-left">
+                            <span class="panel-icon">📊</span>
+                            <span>CSV Logs</span>
+                        </div>
+                        <span class="panel-toggle">▼</span>
+                    </div>
+                    <div class="panel-content" id="csvLogOutput">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <div class="empty-state-text">CSV logs will appear when available</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const slotId = parseInt(window.location.pathname.split('/').pop());
+        let autoScroll = true;
+        let previousTerminalOutput = '';
+        let previousUartLogOutput = '';
+        let previousCsvLogOutput = '';
+
+        // Toggle panel collapse
+        function togglePanel(header) {
+            const panel = header.closest('.panel');
+            panel.classList.toggle('collapsed');
+        }
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        }
+
+        // Open external link in same tab
+        function openExternalLink(url) {
+            window.location.href = url;
+        }
+
+        // Tool functions
+        async function testTelegramConnection() {
+            const slot = await fetchSlotData();
+            if (!slot || !slot.owner) {
+                showTelegramStatus('❌ No owner assigned to this slot', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/telegram/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: slot.owner,
+                        slot_id: slotId
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showTelegramStatus(`✅ Connected: ${result.message}`, 'success');
+                    document.getElementById('telegramNotifyBtn').disabled = false;
+                } else {
+                    showTelegramStatus(`❌ ${result.error || 'Not registered'}`, 'error');
+                }
+            } catch (error) {
+                showTelegramStatus('❌ Connection failed', 'error');
+                console.error('Telegram test error:', error);
+            }
+        }
+
+        async function sendFailNotification() {
+            const slot = await fetchSlotData();
+            if (!slot || !slot.owner) {
+                showTelegramStatus('❌ No owner assigned', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/telegram/notify-fail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: slot.owner,
+                        slot_id: slotId,
+                        test_case: slot.test_case || 'Unknown',
+                        error_msg: slot.error_msg || 'Test failed or encountered errors'
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showTelegramStatus('✅ Fail notification sent!', 'success');
+                } else {
+                    showTelegramStatus(`❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showTelegramStatus('❌ Failed to send notification', 'error');
+                console.error('Telegram notify error:', error);
+            }
+        }
+
+        function showTelegramStatus(message, type) {
+            const statusEl = document.getElementById('telegramStatus');
+            statusEl.textContent = message;
+            statusEl.style.color = type === 'success' ? '#82b89a' : '#c98080';
+            setTimeout(() => {
+                statusEl.textContent = '';
+            }, 5000);
+        }
+
+        async function fetchSlotData() {
+            try {
+                const response = await fetch(`/api/slots/${slotId}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching slot data:', error);
+                return null;
+            }
+        }
+
+        // Format timestamp
+        function formatTimestamp(isoString) {
+            if (!isoString) return '-';
+            const date = new Date(isoString);
+            return date.toLocaleString();
+        }
+
+        // Update slot information
+        function updateSlotInfo(slot) {
+            // Update IDs
+            document.getElementById('slotId').textContent = slot.id;
+            document.getElementById('slotIdTitle').textContent = slot.id;
+
+            // Update status
+            const statusLed = document.getElementById('statusLed');
+            const statusText = document.getElementById('statusText');
+            statusLed.className = `status-led ${slot.status}`;
+            statusText.textContent = slot.status;
+
+            // Update info table (no class changes needed for table cells)
+            document.getElementById('infoOwner').textContent = slot.owner || '-';
+            document.getElementById('infoTestCase').textContent = slot.test_case || '-';
+            document.getElementById('infoSsdSerial').textContent = slot.ssd_serial || '-';
+            document.getElementById('infoSsdEui').textContent = slot.ssd_eui || '-';
+            document.getElementById('infoScriptPath').textContent = slot.script_path || '-';
+
+            const remoteLog = (slot.log_ip && slot.log_port) ? `${slot.log_ip}:${slot.log_port}` : '-';
+            document.getElementById('infoRemoteLog').textContent = remoteLog;
+
+            document.getElementById('infoPid').textContent = slot.pid > 0 ? slot.pid : '-';
+            document.getElementById('infoStartTime').textContent = formatTimestamp(slot.start_time);
+
+            // Update progress
+            const progress = slot.progress || 0;
+            document.getElementById('progressPercentage').textContent = `${progress}%`;
+            document.getElementById('progressBarFill').style.width = `${progress}%`;
+
+            // Update action buttons
+            const stopBtn = document.getElementById('stopBtn');
+            stopBtn.disabled = slot.status !== 'running';
+
+            // Update terminal output
+            updateTerminalOutput(slot);
+
+            // Update log output
+            updateLogOutput(slot);
+        }
+
+        // Update terminal output
+        function updateTerminalOutput(slot) {
+            const terminalDiv = document.getElementById('terminalOutput');
+
+            if (!slot.script_path || slot.status === 'idle') {
+                terminalDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📟</div>
+                        <div class="empty-state-text">No script running</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let output = '';
+
+            if (slot.start_time) {
+                output += `<div class="log-line timestamp">[${formatTimestamp(slot.start_time)}] Test started</div>`;
+            }
+
+            if (slot.script_command) {
+                output += `<div class="log-line">$ ${slot.script_command}</div>`;
+                output += `<div class="log-line">============================================</div>`;
+            }
+
+            if (slot.owner) {
+                output += `<div class="log-line">Owner: ${slot.owner}</div>`;
+            }
+
+            if (slot.test_case) {
+                output += `<div class="log-line">Test Case: ${slot.test_case}</div>`;
+            }
+
+            if (slot.ssd_serial) {
+                output += `<div class="log-line">SSD Serial: ${slot.ssd_serial}</div>`;
+            }
+
+            if (slot.ssd_eui) {
+                output += `<div class="log-line">SSD EUI: ${slot.ssd_eui}</div>`;
+            }
+
+            output += `<div class="log-line">============================================</div>`;
+            output += `<div class="log-line"></div>`;
+
+            if (slot.status === 'running') {
+                output += `<div class="log-line progress">Progress: ${slot.progress}%</div>`;
+                output += `<div class="log-line">Status: Running...</div>`;
+            } else if (slot.status === 'success') {
+                output += `<div class="log-line success">✓ Test completed successfully</div>`;
+                output += `<div class="log-line success">Progress: 100%</div>`;
+            } else if (slot.status === 'failed') {
+                output += `<div class="log-line error">✗ Test failed</div>`;
+                if (slot.error_msg) {
+                    output += `<div class="log-line error">Error: ${slot.error_msg}</div>`;
+                }
+            } else if (slot.status === 'stopping') {
+                output += `<div class="log-line">Stopping test...</div>`;
+            }
+
+            if (slot.last_update) {
+                output += `<div class="log-line"></div>`;
+                output += `<div class="log-line timestamp">Last update: ${formatTimestamp(slot.last_update)}</div>`;
+            }
+
+            if (output !== previousTerminalOutput) {
+                terminalDiv.innerHTML = output;
+                previousTerminalOutput = output;
+                if (autoScroll) {
+                    terminalDiv.scrollTop = terminalDiv.scrollHeight;
+                }
+            }
+        }
+
+        // Update UART log output with keyword highlighting and interactive features
+        function updateUartLogOutput(slot) {
+            const logDiv = document.getElementById('uartLogOutput');
+            const inputContainer = document.querySelector('.uart-input-container');
+            const logPathEl = document.getElementById('uart-log-path');
+
+            if (slot.status === 'idle') {
+                logDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📄</div>
+                        <div class="empty-state-text">UART logs will appear when test starts</div>
+                    </div>
+                `;
+                inputContainer.style.display = 'none';
+                logPathEl.textContent = '';
+                return;
+            }
+
+            // Show interactive input when test is running
+            if (slot.status === 'running') {
+                inputContainer.style.display = 'block';
+            } else {
+                inputContainer.style.display = 'none';
+            }
+
+            // Display log file path
+            if (slot.log_file) {
+                const logFileName = slot.log_file.split('/').pop();
+                logPathEl.textContent = `📁 ${logFileName}`;
+            } else if (slot.owner && slot.test_case) {
+                logPathEl.textContent = `📁 ${slot.owner}/${slot.test_case}_UART.log`;
+            }
+
+            // Build log output with keyword highlighting
+            let logOutput = '';
+
+            // Header with connection info
+            if (slot.log_ip && slot.log_port) {
+                logOutput += `<div class="log-line timestamp">[Connected to ${slot.log_ip}:${slot.log_port}]</div>`;
+            }
+
+            // Log directory
+            if (slot.log_file) {
+                logOutput += `<div class="log-line timestamp">[Log: ${slot.log_file}]</div>`;
+            }
+
+            logOutput += `<div class="log-line timestamp">[${new Date().toLocaleTimeString()}] UART Monitor Active</div>`;
+            logOutput += `<div class="log-line"></div>`;
+
+            // Simulate log content with keyword highlighting
+            if (slot.status === 'running' || slot.status === 'success' || slot.status === 'failed') {
+                const progress = slot.progress;
+
+                // Add sample log lines with keywords
+                logOutput += highlightKeywords(`[INFO] Test execution started for ${slot.test_case || 'test case'}`);
+                logOutput += highlightKeywords(`[INFO] Progress: ${progress}%`);
+
+                if (progress > 20) {
+                    logOutput += highlightKeywords(`[UART] Device initialization complete`);
+                }
+
+                if (progress > 50) {
+                    logOutput += highlightKeywords(`[INFO] Running performance tests...`);
+                    logOutput += highlightKeywords(`[UART] Received: Data packet OK`);
+                }
+
+                if (progress > 70) {
+                    logOutput += highlightKeywords(`[WARN] Temperature threshold approaching`);
+                }
+
+                if (slot.status === 'success') {
+                    logOutput += highlightKeywords(`[INFO] All tests passed successfully`);
+                    logOutput += `<div class="log-line success">[✓] Test completed at ${new Date().toLocaleTimeString()}</div>`;
+                } else if (slot.status === 'failed') {
+                    logOutput += highlightKeywords(`[ERROR] Test execution failed`);
+                    if (slot.error_msg) {
+                        logOutput += highlightKeywords(`[ERROR] ${slot.error_msg}`);
+                    }
+                    logOutput += `<div class="log-line uart-error">[✗] Test failed at ${new Date().toLocaleTimeString()}</div>`;
+                }
+            }
+
+            if (logOutput !== previousUartLogOutput) {
+                logDiv.innerHTML = logOutput;
+                previousUartLogOutput = logOutput;
+                if (autoScroll) {
+                    logDiv.scrollTop = logDiv.scrollHeight;
+                }
+            }
+        }
+
+        // Highlight keywords in log lines
+        function highlightKeywords(line) {
+            let cssClass = 'log-line';
+
+            if (line.includes('[ERROR]') || line.includes('FAIL') || line.includes('FAILED')) {
+                cssClass = 'log-line uart-error';
+            } else if (line.includes('[WARN]') || line.includes('WARNING')) {
+                cssClass = 'log-line uart-warn';
+            } else if (line.includes('[INFO]')) {
+                cssClass = 'log-line uart-info';
+            } else if (line.includes('[UART]')) {
+                cssClass = 'log-line uart-data';
+            } else if (line.includes('TX:') || line.includes('Sent:')) {
+                cssClass = 'log-line uart-tx';
+            } else if (line.includes('RX:') || line.includes('Received:')) {
+                cssClass = 'log-line uart-rx';
+            }
+
+            return `<div class="${cssClass}">${line}</div>`;
+        }
+
+        // Send command to UART
+        function sendUartCommand() {
+            const input = document.getElementById('uart-command-input');
+            const command = input.value;
+
+            if (!command.trim()) return;
+
+            const addNewline = document.getElementById('uart-add-newline').checked;
+            const addCr = document.getElementById('uart-add-cr').checked;
+            const echoCommands = document.getElementById('uart-echo-commands').checked;
+
+            // Build command with line endings
+            let finalCommand = command;
+            if (addCr) finalCommand += '\r';
+            if (addNewline) finalCommand += '\n';
+
+            // Echo command if enabled
+            if (echoCommands) {
+                const logDiv = document.getElementById('uartLogOutput');
+                const echoLine = document.createElement('div');
+                echoLine.className = 'log-line uart-tx';
+                echoLine.textContent = `TX: ${command}`;
+                logDiv.appendChild(echoLine);
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+
+            // Send command to backend
+            fetch('/api/serial/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    slot_id: slotId,
+                    command: finalCommand
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        console.error('Failed to send command:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending command:', error);
+                });
+
+            input.value = '';
+        }
+
+        // Allow Enter key to send command
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('uart-command-input');
+            if (input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        sendUartCommand();
+                    }
+                });
+            }
+        });
+
+        // Update CSV log output (new function)
+        function updateCsvLogOutput(slot) {
+            const csvDiv = document.getElementById('csvLogOutput');
+
+            if (slot.status === 'idle') {
+                csvDiv.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">CSV logs will appear when available</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let csvOutput = '';
+            csvOutput += `<div class="log-line timestamp">[CSV Log Output]</div>`;
+            csvOutput += `<div class="log-line">Timestamp,Test,Value,Status</div>`;
+            csvOutput += `<div class="log-line"></div>`;
+
+            if (slot.status === 'running' || slot.status === 'success') {
+                const now = new Date();
+                csvOutput += `<div class="log-line">${now.toISOString()},${slot.test_case || 'N/A'},${slot.progress}%,${slot.status}</div>`;
+                csvOutput += `<div class="log-line timestamp">// Future implementation: Real CSV data from test execution</div>`;
+            }
+
+            if (csvOutput !== previousCsvLogOutput) {
+                csvDiv.innerHTML = csvOutput;
+                previousCsvLogOutput = csvOutput;
+                if (autoScroll) {
+                    csvDiv.scrollTop = csvDiv.scrollHeight;
+                }
+            }
+        }
+
+        // Stop test
+        async function stopTest() {
+            const stopBtn = document.getElementById('stopBtn');
+            const originalText = stopBtn.innerHTML;
+
+            // Visual feedback
+            stopBtn.innerHTML = '<span>⏹</span> Stopping...';
+            stopBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/slots/${slotId}/stop`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    loadData();
+                } else {
+                    alert('Failed to stop test');
+                    stopBtn.innerHTML = originalText;
+                    stopBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error stopping test:', error);
+                alert('Failed to stop test');
+                stopBtn.innerHTML = originalText;
+                stopBtn.disabled = false;
+            }
+        }
+
+        // Keyboard shortcut handler
+        document.addEventListener('keydown', function (event) {
+            // Ctrl+C to stop test (when running)
+            if (event.ctrlKey && event.key === 'c') {
+                const stopBtn = document.getElementById('stopBtn');
+                if (!stopBtn.disabled) {
+                    event.preventDefault();
+                    console.log('Ctrl+C detected - Stopping test...');
+                    stopTest();
+                }
+            }
+
+            // Ctrl+R to reset slot (when not running)
+            if (event.ctrlKey && event.key === 'r') {
+                const resetBtn = document.getElementById('resetBtn');
+                if (!resetBtn.disabled) {
+                    event.preventDefault();
+                    console.log('Ctrl+R detected - Resetting slot...');
+                    resetSlot();
+                }
+            }
+        });
+
+        // Reset slot
+        async function resetSlot() {
+            if (!confirm('Are you sure you want to reset this slot?')) return;
+
+            try {
+                const response = await fetch(`/api/slots/${slotId}/reset`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    loadData();
+                } else {
+                    alert('Failed to reset slot');
+                }
+            } catch (error) {
+                console.error('Error resetting slot:', error);
+                alert('Failed to reset slot');
+            }
+        }
+
+        // Load data
+        async function loadData() {
+            try {
+                const response = await fetch('/api/slots');
+                const data = await response.json();
+                const slot = data.slots.find(s => s.id === slotId);
+
+                if (slot) {
+                    updateSlotInfo(slot);
+                    updateStats(data.slots);
+                    updateUartLogOutput(slot);
+                    updateCsvLogOutput(slot);
+                } else {
+                    alert('Slot not found');
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Update stats
+        function updateStats(slots) {
+            const stats = { idle: 0, running: 0, completed: 0 };
+            slots.forEach(slot => {
+                if (slot.status === 'idle') stats.idle++;
+                else if (slot.status === 'running') stats.running++;
+                else stats.completed++;
+            });
+
+            document.getElementById('stat-idle').textContent = stats.idle;
+            document.getElementById('stat-running').textContent = stats.running;
+            document.getElementById('stat-completed').textContent = stats.completed;
+        }
+
+        // Auto-refresh every 2 seconds
+        setInterval(loadData, 2000);
+
+        // Initial load
+        loadData();
+
+        // Detect manual scrolling
+        ['terminalOutput', 'logOutput'].forEach(id => {
+            const element = document.getElementById(id);
+            element.addEventListener('scroll', () => {
+                const isAtBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
+                autoScroll = isAtBottom;
+            });
+        });
+    </script>
+</body>
+
+</html>

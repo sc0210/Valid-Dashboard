@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Bot Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card .label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .stat-card.status-active .value {
+            color: #27ae60;
+        }
+
+        .stat-card.status-inactive .value {
+            color: #e74c3c;
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .refresh-btn:hover {
+            background: #2980b9;
+        }
+
+        .users-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .user-card {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .user-card .username {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .user-card .chat-id {
+            font-size: 0.85em;
+            color: #7f8c8d;
+        }
+
+        .activity-log {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #95a5a6;
+        }
+
+        .log-entry.type-command {
+            border-left-color: #3498db;
+        }
+
+        .log-entry.type-notification {
+            border-left-color: #27ae60;
+        }
+
+        .log-entry.type-registration {
+            border-left-color: #9b59b6;
+        }
+
+        .log-entry.type-error {
+            border-left-color: #e74c3c;
+        }
+
+        .log-entry .timestamp {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .log-entry .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+
+        .type-badge.command {
+            background: #d6eaf8;
+            color: #2471a3;
+        }
+
+        .type-badge.notification {
+            background: #d5f4e6;
+            color: #1e8449;
+        }
+
+        .type-badge.registration {
+            background: #ebdef0;
+            color: #76448a;
+        }
+
+        .type-badge.error {
+            background: #fadbd8;
+            color: #c0392b;
+        }
+
+        .log-entry .message {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .log-entry .details {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.active {
+            background: #27ae60;
+            box-shadow: 0 0 8px rgba(39, 174, 96, 0.5);
+        }
+
+        .status-indicator.inactive {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Dashboard</a>
+
+        <div class="header">
+            <h1>🤖 Telegram Bot Monitor</h1>
+            <p class="subtitle">Real-time monitoring of bot interactions and user registrations</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">Bot Status</div>
+                <div class="value" id="bot-status">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Registered Users</div>
+                <div class="value" id="total-users">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Total Activities</div>
+                <div class="value" id="total-activities">0</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span>👥 Registered Users</span>
+                <button class="refresh-btn" onclick="loadStats()">🔄 Refresh</button>
+            </div>
+            <div id="users-container" class="users-list"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <span>📊 Activity Log (Last 50)</span>
+            </div>
+            <div id="activity-log" class="activity-log"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/bot/stats`);
+                const data = await response.json();
+
+                updateStats(data);
+                updateUsersList(data.registered_users || []);
+                updateActivityLog(data.activity_log || []);
+            } catch (error) {
+                console.error('Failed to load bot stats:', error);
+            }
+        }
+
+        function updateStats(data) {
+            // Update bot status
+            const statusEl = document.getElementById('bot-status');
+            if (data.bot_status === 'active') {
+                statusEl.innerHTML = '<span class="status-indicator active"></span>Active';
+                statusEl.style.color = '#27ae60';
+            } else {
+                statusEl.innerHTML = '<span class="status-indicator inactive"></span>Inactive';
+                statusEl.style.color = '#e74c3c';
+            }
+
+            // Update counts
+            document.getElementById('total-users').textContent = data.total_users || 0;
+            document.getElementById('total-activities').textContent = (data.activity_log || []).length;
+        }
+
+        function updateUsersList(users) {
+            const container = document.getElementById('users-container');
+
+            if (!users || users.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👤</div>
+                        <div>No users registered yet</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = users.map(username => `
+                <div class="user-card">
+                    <div class="username">👤 ${username}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateActivityLog(activities) {
+            const container = document.getElementById('activity-log');
+
+            if (!activities || activities.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>No activities recorded yet</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by timestamp descending (newest first)
+            const sorted = [...activities].sort((a, b) =>
+                new Date(b.timestamp) - new Date(a.timestamp)
+            );
+
+            container.innerHTML = sorted.map(entry => {
+                const time = formatTimestamp(entry.timestamp);
+                const typeClass = entry.type || 'info';
+
+                return `
+                    <div class="log-entry type-${typeClass}">
+                        <div class="timestamp">${time}</div>
+                        <div>
+                            <span class="type-badge ${typeClass}">${typeClass}</span>
+                            <span class="message">${entry.username}: ${entry.message}</span>
+                        </div>
+                        ${entry.details ? `<div class="details">${entry.details}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatTimestamp(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // Auto refresh every 5 seconds
+        setInterval(loadStats, 5000);
+
+        // Initial load
+        loadStats();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UART Log - Test Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #6b7c93 0%, #798897 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar.collapsed .nav-item span:not(.nav-item-icon),
+        .sidebar.collapsed .sidebar-header h1,
+        .sidebar.collapsed .sidebar-header .subtitle,
+        .sidebar.collapsed .nav-section-title,
+        .sidebar.collapsed .sidebar-footer .stats-mini,
+        .sidebar.collapsed .sidebar-footer .version-info {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-header>div {
+            justify-content: center !important;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            margin-left: 0;
+        }
+
+        .sidebar-toggle {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            padding: 5px;
+            margin-left: 10px;
+            transition: opacity 0.3s ease;
+            opacity: 0.8;
+        }
+
+        .sidebar-toggle:hover {
+            opacity: 1;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .nav-section-title {
+            padding: 10px 20px;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #7fa9c9;
+        }
+
+        .nav-item.active {
+            background: rgba(127, 169, 201, 0.2);
+            border-left-color: #7fa9c9;
+        }
+
+        .nav-item-icon {
+            margin-right: 12px;
+            font-size: 1.2em;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .version-info {
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.7em;
+            opacity: 0.6;
+            line-height: 1.4;
+        }
+
+        .version-number {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .developer-team {
+            display: block;
+            font-size: 0.9em;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.sidebar-collapsed {
+            margin-left: 60px;
+        }
+
+        .topbar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Connection Panel */
+        .connection-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #6b7c93;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            padding: 10px 15px;
+            border: 2px solid #e8ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #7fa9c9;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #7fa9c9;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #6d95b5;
+        }
+
+        .btn-danger {
+            background: #c98080;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b57070;
+        }
+
+        .btn-secondary {
+            background: #a8b5c2;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #92a0ad;
+        }
+
+        /* Terminal Display */
+        .terminal-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #95a5a6;
+        }
+
+        .status-indicator.connected {
+            background: #82b89a;
+            box-shadow: 0 0 8px rgba(130, 184, 154, 0.6);
+        }
+
+        .terminal-body {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+
+        .log-line {
+            margin-bottom: 2px;
+            word-wrap: break-word;
+        }
+
+        .log-line.error {
+            color: #f48771;
+        }
+
+        .log-line.warning {
+            color: #d4a574;
+        }
+
+        .log-line.info {
+            color: #7fa9c9;
+        }
+
+        .log-line.success {
+            color: #82b89a;
+        }
+
+        .terminal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terminal-body::-webkit-scrollbar-track {
+            background: #2c3e50;
+        }
+
+        .terminal-body::-webkit-scrollbar-thumb {
+            background: #6b7c93;
+            border-radius: 4px;
+        }
+
+        .terminal-body::-webkit-scrollbar-thumb:hover {
+            background: #798897;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div style="display: flex; align-items: center;">
+                <h1>SANBlaze agent</h1>
+                <div class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                    <span id="toggle-icon">☰</span>
+                </div>
+            </div>
+            <div class="subtitle">SSD Validation Dashboard</div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-section-title">Views</div>
+            <a href="/" class="nav-item">
+                <span class="nav-item-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/testcase" class="nav-item">
+                <span class="nav-item-icon">📝</span>
+                <span>Test Case Library</span>
+            </a>
+
+            <div class="nav-section-title">Tools</div>
+            <a href="/uart-log" class="nav-item active">
+                <span class="nav-item-icon">📡</span>
+                <span>UART Log</span>
+            </a>
+            <a href="/serial-monitor" class="nav-item">
+                <span class="nav-item-icon">🔌</span>
+                <span>Serial Monitor</span>
+            </a>
+
+            <div class="nav-section-title">Quick Actions</div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="version-info">
+                <span class="version-number">Version 1.0.0</span>
+                <span class="developer-team">CCPX | FWX | SamChen-SSSTC</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        <div class="topbar">
+            <div class="topbar-title">📡 UART Log Monitor</div>
+        </div>
+
+        <div class="content-area">
+            <!-- Connection Configuration -->
+            <div class="connection-panel">
+                <div class="panel-title">
+                    <span>🔌</span>
+                    <span>Connection Configuration</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">IP Address</label>
+                        <input type="text" class="form-input" id="uart-ip" placeholder="192.168.1.100"
+                            value="192.168.1.100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Port</label>
+                        <input type="number" class="form-input" id="uart-port" placeholder="3333" value="3333">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Log File Name</label>
+                        <input type="text" class="form-input" id="log-filename" placeholder="uart_log.txt"
+                            value="uart_log.txt">
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="connectUART()">
+                        🔌 Connect
+                    </button>
+                    <button class="btn btn-danger" onclick="disconnectUART()" id="disconnect-btn" disabled>
+                        ⏹️ Disconnect
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearLog()">
+                        🗑️ Clear Log
+                    </button>
+                    <button class="btn btn-secondary" onclick="downloadLog()">
+                        💾 Download Log
+                    </button>
+                </div>
+            </div>
+
+            <!-- Terminal Display -->
+            <div class="terminal-container">
+                <div class="terminal-header">
+                    <span>📡 UART Output</span>
+                    <div class="terminal-status">
+                        <span id="status-text">Disconnected</span>
+                        <div class="status-indicator" id="status-indicator"></div>
+                    </div>
+                </div>
+                <div class="terminal-body" id="terminal-output">
+                    <div class="log-line" style="color: #6b7c93;">UART Log Monitor Ready</div>
+                    <div class="log-line" style="color: #6b7c93;">Enter connection details and click Connect to start
+                        monitoring...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let connected = false;
+        let logLines = [];
+
+        // Toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        }
+
+        // Open external link in same tab
+        function openExternalLink(url) {
+            window.location.href = url;
+        }
+
+        // Connect to UART
+        function connectUART() {
+            const ip = document.getElementById('uart-ip').value;
+            const port = document.getElementById('uart-port').value;
+            const filename = document.getElementById('log-filename').value;
+
+            if (!ip || !port) {
+                alert('Please enter IP address and port');
+                return;
+            }
+
+            connected = true;
+            updateConnectionStatus(true);
+
+            addLogLine(`Connecting to ${ip}:${port}...`, 'info');
+
+            // Simulate connection
+            setTimeout(() => {
+                addLogLine(`Connected successfully!`, 'success');
+                addLogLine(`Logging to file: ${filename}`, 'info');
+                addLogLine(`Waiting for UART data...`, 'info');
+
+                // Simulate receiving UART data
+                startSimulatedUARTData();
+            }, 1000);
+        }
+
+        // Disconnect from UART
+        function disconnectUART() {
+            if (!connected) return;
+
+            connected = false;
+            updateConnectionStatus(false);
+            addLogLine('Disconnected', 'warning');
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(isConnected) {
+            const statusText = document.getElementById('status-text');
+            const statusIndicator = document.getElementById('status-indicator');
+            const disconnectBtn = document.getElementById('disconnect-btn');
+
+            if (isConnected) {
+                statusText.textContent = 'Connected';
+                statusIndicator.classList.add('connected');
+                disconnectBtn.disabled = false;
+            } else {
+                statusText.textContent = 'Disconnected';
+                statusIndicator.classList.remove('connected');
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        // Add log line to terminal
+        function addLogLine(text, type = '') {
+            const terminal = document.getElementById('terminal-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.className = 'log-line' + (type ? ' ' + type : '');
+            line.textContent = `[${timestamp}] ${text}`;
+
+            logLines.push(line.textContent);
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Simulate UART data (for demo purposes)
+        function startSimulatedUARTData() {
+            const messages = [
+                { text: 'System initialization started...', type: 'info' },
+                { text: 'Loading firmware v2.4.1', type: 'info' },
+                { text: 'PCIe link established at Gen4 x4', type: 'success' },
+                { text: 'Temperature: 42°C', type: '' },
+                { text: 'NAND flash detected: 256GB', type: 'success' },
+                { text: 'Warning: Cache utilization at 85%', type: 'warning' },
+                { text: 'Self-test passed', type: 'success' },
+                { text: 'Ready for commands', type: 'success' }
+            ];
+
+            let index = 0;
+            const interval = setInterval(() => {
+                if (!connected || index >= messages.length) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                addLogLine(messages[index].text, messages[index].type);
+                index++;
+            }, 1500);
+        }
+
+        // Clear log
+        function clearLog() {
+            const terminal = document.getElementById('terminal-output');
+            terminal.innerHTML = '';
+            logLines = [];
+            addLogLine('Log cleared', 'info');
+        }
+
+        // Download log
+        function downloadLog() {
+            if (logLines.length === 0) {
+                alert('No log data to download');
+                return;
+            }
+
+            const filename = document.getElementById('log-filename').value || 'uart_log.txt';
+            const blob = new Blob([logLines.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            addLogLine(`Log downloaded as ${filename}`, 'success');
+        }
+    </script>
+</body>
+
+</html>

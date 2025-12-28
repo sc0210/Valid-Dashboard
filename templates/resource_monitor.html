@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Resource Monitor - Test Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar - Same as dashboard */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #6b7c93 0%, #798897 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .nav-section-title {
+            padding: 20px 20px 10px;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left: 4px solid white;
+            padding-left: 16px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .content-area {
+            padding: 30px;
+            flex: 1;
+        }
+
+        /* Resource Cards */
+        .resource-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .resource-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .resource-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .resource-icon {
+            font-size: 2em;
+        }
+
+        .resource-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .resource-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #8fa5ba;
+            margin-bottom: 10px;
+        }
+
+        .resource-bar {
+            width: 100%;
+            height: 12px;
+            background: #e8ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .resource-bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 6px;
+        }
+
+        .resource-bar-fill.low {
+            background: linear-gradient(90deg, #82b89a 0%, #6fa486 100%);
+        }
+
+        .resource-bar-fill.medium {
+            background: linear-gradient(90deg, #ffd93d 0%, #f5c842 100%);
+        }
+
+        .resource-bar-fill.high {
+            background: linear-gradient(90deg, #ff9800 0%, #e88700 100%);
+        }
+
+        .resource-bar-fill.critical {
+            background: linear-gradient(90deg, #c98080 0%, #b57070 100%);
+        }
+
+        .resource-details {
+            font-size: 0.9em;
+            color: #7a8fa0;
+        }
+
+        /* Process Table */
+        .process-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-header {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .process-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .process-table thead {
+            background: linear-gradient(135deg, #8fa5ba 0%, #9b8fa5 100%);
+            color: white;
+        }
+
+        .process-table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .process-table tbody tr {
+            border-bottom: 1px solid #e8ecef;
+            transition: all 0.2s ease;
+        }
+
+        .process-table tbody tr:hover {
+            background: #f0f4f8;
+        }
+
+        .process-table td {
+            padding: 12px;
+            font-size: 0.9em;
+            color: #4a5568;
+        }
+
+        .pid-link {
+            color: #7fa9c9;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .pid-link:hover {
+            color: #6d95b5;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-badge.running {
+            background: #ffe5cc;
+            color: #ff9800;
+        }
+
+        .empty-processes {
+            text-align: center;
+            padding: 40px;
+            color: #bdc3c7;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+            color: #4a5568;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: #e8ecef;
+            color: #4a5568;
+        }
+
+        .btn-cancel:hover {
+            background: #d4d8dc;
+        }
+
+        .btn-danger {
+            background: #c98080;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b57070;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>Test Dashboard</h1>
+            <div class="subtitle">System Resource Monitor</div>
+        </div>
+
+        <div class="nav-section-title">Navigation</div>
+        <div class="nav-item" onclick="window.location.href='/'">
+            <span>📊</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="window.location.href='/serial-monitor'">
+            <span>📡</span> Serial Monitor
+        </div>
+        <div class="nav-item active">
+            <span>💻</span> Resource Monitor
+        </div>
+
+        <div class="nav-section-title">Tools</div>
+        <div class="nav-item" onclick="window.location.href='/bot-monitor'">
+            <span>🤖</span> Bot Monitor
+        </div>
+        <div class="nav-item" onclick="window.location.href='/settings'">
+            <span>⚙️</span> Settings
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="topbar">
+            <div class="topbar-title">💻 System Resource Monitor</div>
+            <div style="font-size: 0.9em; color: #7a8fa0;">
+                Last updated: <span id="last-update">--:--:--</span>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Resource Usage Cards -->
+            <div class="resource-grid">
+                <!-- RAM Usage -->
+                <div class="resource-card">
+                    <div class="resource-card-header">
+                        <div class="resource-icon">🧠</div>
+                        <div class="resource-title">RAM Usage</div>
+                    </div>
+                    <div class="resource-value" id="ram-percent">0%</div>
+                    <div class="resource-bar">
+                        <div class="resource-bar-fill low" id="ram-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="resource-details" id="ram-details">-- / -- GB</div>
+                </div>
+
+                <!-- CPU Usage -->
+                <div class="resource-card">
+                    <div class="resource-card-header">
+                        <div class="resource-icon">⚡</div>
+                        <div class="resource-title">CPU Usage</div>
+                    </div>
+                    <div class="resource-value" id="cpu-percent">0%</div>
+                    <div class="resource-bar">
+                        <div class="resource-bar-fill low" id="cpu-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="resource-details" id="cpu-details">-- cores</div>
+                </div>
+
+                <!-- Disk Usage -->
+                <div class="resource-card">
+                    <div class="resource-card-header">
+                        <div class="resource-icon">💾</div>
+                        <div class="resource-title">Disk Usage</div>
+                    </div>
+                    <div class="resource-value" id="disk-percent">0%</div>
+                    <div class="resource-bar">
+                        <div class="resource-bar-fill low" id="disk-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="resource-details" id="disk-details">-- / -- GB</div>
+                </div>
+            </div>
+
+            <!-- Running Test Processes -->
+            <div class="process-section">
+                <div class="section-header">
+                    <span>🔄</span>
+                    Running Test Processes
+                </div>
+                <table class="process-table">
+                    <thead>
+                        <tr>
+                            <th>Slot</th>
+                            <th>Owner</th>
+                            <th>Test Case</th>
+                            <th>PID</th>
+                            <th>CPU %</th>
+                            <th>Memory %</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="process-tbody">
+                        <tr>
+                            <td colspan="7" class="empty-processes">
+                                No test processes running
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Termination Modal -->
+    <div class="modal" id="terminate-modal">
+        <div class="modal-content">
+            <div class="modal-header">⚠️ Terminate Process</div>
+            <div class="modal-body">
+                <p><strong>Slot:</strong> <span id="modal-slot"></span></p>
+                <p><strong>Owner:</strong> <span id="modal-owner"></span></p>
+                <p><strong>Test Case:</strong> <span id="modal-testcase"></span></p>
+                <p><strong>PID:</strong> <span id="modal-pid"></span></p>
+                <br>
+                <p style="color: #c98080; font-weight: 600;">Are you sure you want to terminate this process?</p>
+                <p style="font-size: 0.9em; color: #7a8fa0;">This will forcefully stop the test execution.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeTerminateModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmTerminate()">Terminate</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentPidToTerminate = null;
+        let currentSlotIdToTerminate = null;
+
+        // Load and display resource data
+        async function loadResourceData() {
+            try {
+                const response = await fetch(`${API_BASE}/api/system/resources`);
+                const data = await response.json();
+
+                // Update RAM
+                updateResourceCard('ram', data.ram.percent, data.ram.used, data.ram.total);
+
+                // Update CPU
+                updateResourceCard('cpu', data.cpu.percent, null, data.cpu.count);
+
+                // Update Disk
+                updateResourceCard('disk', data.disk.percent, data.disk.used, data.disk.total);
+
+                // Update processes
+                updateProcessTable(data.processes);
+
+                // Update last update time
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Failed to load resource data:', error);
+            }
+        }
+
+        function updateResourceCard(type, percent, used, total) {
+            const percentEl = document.getElementById(`${type}-percent`);
+            const barEl = document.getElementById(`${type}-bar`);
+            const detailsEl = document.getElementById(`${type}-details`);
+
+            percentEl.textContent = `${percent}%`;
+            barEl.style.width = `${percent}%`;
+
+            // Update bar color based on usage
+            barEl.className = 'resource-bar-fill';
+            if (percent < 50) {
+                barEl.classList.add('low');
+            } else if (percent < 75) {
+                barEl.classList.add('medium');
+            } else if (percent < 90) {
+                barEl.classList.add('high');
+            } else {
+                barEl.classList.add('critical');
+            }
+
+            // Update details text
+            if (type === 'cpu') {
+                detailsEl.textContent = `${total} cores`;
+            } else {
+                detailsEl.textContent = `${used} / ${total} GB`;
+            }
+        }
+
+        function updateProcessTable(processes) {
+            const tbody = document.getElementById('process-tbody');
+
+            if (!processes || processes.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-processes">
+                            No test processes running
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = processes.map(proc => `
+                <tr>
+                    <td><strong>Slot ${proc.slot_id}</strong></td>
+                    <td>${proc.owner || '-'}</td>
+                    <td>${proc.test_case || '-'}</td>
+                    <td>
+                        <span class="pid-link" onclick="openTerminateModal(${proc.slot_id}, ${proc.pid}, '${proc.owner}', '${proc.test_case}')">
+                            ${proc.pid}
+                        </span>
+                    </td>
+                    <td>${proc.cpu_percent}%</td>
+                    <td>${proc.memory_percent}%</td>
+                    <td>
+                        <span class="status-badge running">Running</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openTerminateModal(slotId, pid, owner, testCase) {
+            currentPidToTerminate = pid;
+            currentSlotIdToTerminate = slotId;
+            document.getElementById('modal-slot').textContent = slotId;
+            document.getElementById('modal-owner').textContent = owner || 'Not assigned';
+            document.getElementById('modal-testcase').textContent = testCase || 'None';
+            document.getElementById('modal-pid').textContent = pid;
+            document.getElementById('terminate-modal').classList.add('active');
+        }
+
+        function closeTerminateModal() {
+            document.getElementById('terminate-modal').classList.remove('active');
+            currentPidToTerminate = null;
+            currentSlotIdToTerminate = null;
+        }
+
+        async function confirmTerminate() {
+            if (!currentPidToTerminate || !currentSlotIdToTerminate) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/slots/${currentSlotIdToTerminate}/stop`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    alert(`Process ${currentPidToTerminate} terminated successfully`);
+                    closeTerminateModal();
+                    loadResourceData();
+                } else {
+                    alert('Failed to terminate process');
+                }
+            } catch (error) {
+                console.error('Error terminating process:', error);
+                alert('Error terminating process');
+            }
+        }
+
+        // Auto-refresh every 3 seconds
+        setInterval(loadResourceData, 3000);
+
+        // Initial load
+        loadResourceData();
+    </script>
+</body>
+
+</html>

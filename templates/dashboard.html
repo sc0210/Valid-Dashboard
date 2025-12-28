@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANBlaze agent Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #6b7c93 0%, #798897 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar.collapsed .nav-item span:not(.nav-item-icon),
+        .sidebar.collapsed .sidebar-header h1,
+        .sidebar.collapsed .sidebar-header .subtitle,
+        .sidebar.collapsed .nav-section-title,
+        .sidebar.collapsed .sidebar-footer .stats-mini,
+        .sidebar.collapsed .sidebar-footer .version-info {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-header>div {
+            justify-content: center !important;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            margin-left: 0;
+        }
+
+        .sidebar-toggle {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            padding: 5px;
+            margin-left: 10px;
+            transition: opacity 0.3s ease;
+            opacity: 0.8;
+        }
+
+        .sidebar-toggle:hover {
+            opacity: 1;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .nav-section-title {
+            padding: 10px 20px;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #7fa9c9;
+        }
+
+        .nav-item.active {
+            background: rgba(127, 169, 201, 0.2);
+            border-left-color: #7fa9c9;
+        }
+
+        .nav-item-icon {
+            margin-right: 12px;
+            font-size: 1.2em;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .stats-mini {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+
+        .stat-mini {
+            text-align: center;
+        }
+
+        .stat-mini-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-mini-label {
+            font-size: 0.7em;
+            opacity: 0.7;
+            text-transform: uppercase;
+        }
+
+        .version-info {
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.7em;
+            opacity: 0.6;
+            line-height: 1.4;
+        }
+
+        .version-number {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .developer-team {
+            display: block;
+            font-size: 0.9em;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.sidebar-collapsed {
+            margin-left: 60px;
+        }
+
+        /* iframe Container */
+        .iframe-container {
+            flex: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .topbar {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topbar-title {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #bdc3c7;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #6b7c93;
+            margin-right: 10px;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            border: 2px solid #e8ecef;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85em;
+            font-weight: 500;
+            color: #6b7c93;
+        }
+
+        .filter-btn:hover {
+            border-color: #8fa5ba;
+            background: #f8fafb;
+        }
+
+        .filter-btn.active {
+            background: #7fa9c9;
+            border-color: #7fa9c9;
+            color: white;
+        }
+
+        .filter-count {
+            margin-left: 5px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        /* Table View */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .slots-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .slots-table thead {
+            background: linear-gradient(135deg, #8fa5ba 0%, #9b8fa5 100%);
+            color: white;
+        }
+
+        .slots-table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slots-table tbody tr {
+            border-bottom: 1px solid #e8ecef;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .slots-table tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .slots-table tbody tr:nth-child(odd) {
+            background: #ffffff;
+        }
+
+        .slots-table tbody tr:hover {
+            background: #f0f4f8 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .slots-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .slots-table td {
+            padding: 12px;
+            font-size: 0.9em;
+            color: #4a5568;
+            vertical-align: middle;
+        }
+
+        .slot-id-cell {
+            font-weight: 700;
+            color: #6b7c93;
+            font-size: 1em;
+        }
+
+        /* LED Status Indicator */
+        .status-led-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-led.idle {
+            background: #a8b5c2;
+            box-shadow: 0 0 5px rgba(168, 181, 194, 0.5);
+        }
+
+        .status-led.running {
+            background: #ff9800;
+            box-shadow: 0 0 8px rgba(255, 152, 0, 0.8);
+            animation: breathingPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes breathingPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                box-shadow: 0 0 8px rgba(255, 152, 0, 0.8);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(0.95);
+                box-shadow: 0 0 15px rgba(255, 152, 0, 1);
+            }
+        }
+
+        .status-led.success {
+            background: #82b89a;
+            box-shadow: 0 0 8px rgba(130, 184, 154, 0.8);
+        }
+
+        .status-led.failed {
+            background: #c98080;
+            box-shadow: 0 0 8px rgba(201, 128, 128, 0.8);
+        }
+
+        .status-led.stopping {
+            background: #d4a574;
+            box-shadow: 0 0 8px rgba(212, 165, 116, 0.8);
+        }
+
+        @keyframes ledPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 5px rgba(127, 169, 201, 0.5);
+                opacity: 1;
+            }
+
+            50% {
+                box-shadow: 0 0 15px rgba(127, 169, 201, 1);
+                opacity: 0.8;
+            }
+        }
+
+        .status-text {
+            font-size: 0.85em;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        /* Progress Bar in Table */
+        .progress-cell {
+            min-width: 120px;
+        }
+
+        .table-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e8ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .table-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #7fa9c9 0%, #82b89a 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            font-size: 0.8em;
+            color: #6b7c93;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+
+        /* Empty value styling */
+        .empty-value {
+            color: #bdc3c7;
+            font-style: italic;
+            font-size: 0.85em;
+        }
+
+        /* Action buttons in table */
+        .table-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .table-btn {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            white-space: nowrap;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .table-btn:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .table-btn.launch {
+            color: #2980b9;
+        }
+
+        .table-btn.launch:hover {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .table-btn.stop {
+            color: #c0392b;
+        }
+
+        .table-btn.stop:hover {
+            background: #ffebee;
+            color: #b71c1c;
+        }
+
+        .table-btn.reset {
+            color: #7f8c8d;
+        }
+
+        .table-btn.reset:hover {
+            background: #eceff1;
+            color: #546e7a;
+        }
+
+        .table-btn.setup {
+            color: #8e44ad;
+        }
+
+        .table-btn.setup:hover {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+
+        .table-btn.clear {
+            color: #f39c12;
+        }
+
+        .table-btn.clear:hover {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        /* Control Panel Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5em;
+            color: #95a5a6;
+            line-height: 1;
+            transition: color 0.2s;
+            padding: 0 5px;
+        }
+
+        .modal-close:hover {
+            color: #e74c3c;
+        }
+
+        .modal-subheader {
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .form-label .required {
+            color: #e74c3c;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .section-divider {
+            border-top: 2px solid #ecf0f1;
+            margin: 25px 0;
+            padding-top: 20px;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        /* Slot grouping styles */
+        .slots-table tbody tr.group-first {
+            border-top: 3px solid #8fa5ba;
+        }
+
+        .slots-table tbody tr.group-last {
+            border-bottom: 3px solid #8fa5ba;
+        }
+
+        .slot-group-label {
+            background: linear-gradient(135deg, #8fa5ba 0%, #9b8fa5 100%);
+            color: white;
+            padding: 8px 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-left: 4px solid #7a8fa0;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .status-running {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div style="display: flex; align-items: center;">
+                <h1>SANBlaze agent</h1>
+                <div class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                    <span id="toggle-icon">☰</span>
+                </div>
+            </div>
+            <div class="subtitle">SSD Validation Dashboard</div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-section-title">Views</div>
+            <div class="nav-item active" onclick="showDashboard()">
+                <span class="nav-item-icon">📊</span>
+                <span>Dashboard</span>
+            </div>
+            <a href="/testcase" class="nav-item">
+                <span class="nav-item-icon">📝</span>
+                <span>Test Case Library</span>
+            </a>
+
+            <div class="nav-section-title">Tools</div>
+            <a href="/uart-log" class="nav-item">
+                <span class="nav-item-icon">📡</span>
+                <span>UART Log</span>
+            </a>
+            <a href="/serial-monitor" class="nav-item">
+                <span class="nav-item-icon">🔌</span>
+                <span>Serial Monitor</span>
+            </a>
+
+            <a href="/resource-monitor" class="nav-item">
+                <span class="nav-item-icon">💻</span>
+                <span>Resource Monitor</span>
+            </a>
+
+            <div class="nav-section-title">External Links</div>
+            <div class="nav-item" onclick="loadExternalLink('https://sanblaze.com')">
+                <span class="nav-item-icon">🌐</span>
+                <span>SANBlaze</span>
+            </div>
+
+            <div class="nav-section-title">Quick Actions</div>
+
+            <div class="nav-item" onclick="location.href='/bot-monitor'">
+                <span class="nav-item-icon">🤖</span>
+                <span>Bot Monitor</span>
+            </div>
+
+            <div class="nav-item" onclick="location.href='/settings'">
+                <span class="nav-item-icon">⚙️</span>
+                <span>Settings</span>
+            </div>
+
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="stats-mini">
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="stat-idle">16</span>
+                    <span class="stat-mini-label">Idle</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="stat-running">0</span>
+                    <span class="stat-mini-label">Running</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-value" id="stat-completed">0</span>
+                    <span class="stat-mini-label">Complete</span>
+                </div>
+            </div>
+            <div class="version-info">
+                <span class="version-number">Version 1.0.0</span>
+                <span class="developer-team">CCPX | FWX | SamChen-SSSTC</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        <!-- Dashboard Content -->
+        <div id="dashboard-content" style="display: flex; flex-direction: column; flex: 1;">
+            <div class="topbar">
+                <div class="topbar-title">Dashboard</div>
+            </div>
+
+            <div class="content-area">
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <span class="filter-label">Filter:</span>
+                    <button class="filter-btn active" onclick="filterSlots('all')" id="filter-all">
+                        All <span class="filter-count" id="count-all">(16)</span>
+                    </button>
+                    <button class="filter-btn" onclick="filterSlots('running')" id="filter-running">
+                        Running <span class="filter-count" id="count-running">(0)</span>
+                    </button>
+                    <button class="filter-btn" onclick="filterSlots('idle')" id="filter-idle">
+                        Idle <span class="filter-count" id="count-idle">(16)</span>
+                    </button>
+                    <button class="filter-btn" onclick="filterSlots('success')" id="filter-success">
+                        Success <span class="filter-count" id="count-success">(0)</span>
+                    </button>
+                    <button class="filter-btn" onclick="filterSlots('failed')" id="filter-failed">
+                        Failed <span class="filter-count" id="count-failed">(0)</span>
+                    </button>
+                </div>
+
+                <!-- Slots Table -->
+                <div class="table-container">
+                    <table class="slots-table">
+                        <thead>
+                            <tr>
+                                <th>Slot</th>
+                                <th>Status</th>
+                                <th>Owner</th>
+                                <th>Test Case</th>
+                                <th>Progress</th>
+                                <th>Start Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="slots-tbody">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- End Dashboard Content -->
+
+        <!-- iframe Container for External Links -->
+        <iframe id="external-iframe" class="iframe-container" style="display: none;"></iframe>
+    </div>
+
+    <!-- Launch Control Panel Modal -->
+    <div class="modal" id="launch-modal" onclick="closeModalOnBackground(event, 'launch-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <span>Launch Test - Slot <span id="launch-slot-id">0</span></span>
+                <span class="modal-close" onclick="closeLaunchModal()" title="Close">×</span>
+            </div>
+            <div class="modal-subheader">Configure and start test execution</div>
+
+            <form id="launch-form">
+                <div class="section-title">📋 Test Information</div>
+                <div class="form-group">
+                    <label class="form-label">Owner Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="launch-owner" placeholder="Your name" required>
+                    <small style="color: #7f8c8d; font-size: 0.85em; margin-top: 4px; display: block;">⚠️ Must match
+                        your Telegram registration name exactly to receive test notifications</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Test Case Name <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="launch-testcase" placeholder="e.g., Performance_Test_001"
+                        required>
+                    <small style="color: #7f8c8d; font-size: 0.85em; margin-top: 4px; display: block;">This will be used
+                        as the log folder name for this test case</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Log Folder Location <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="launch-log-folder" placeholder="./logs or /path/to/logs"
+                        required>
+                    <small style="color: #7f8c8d; font-size: 0.85em; margin-top: 4px; display: block;">Relative path
+                        from project root (e.g., ./logs) or absolute path</small>
+                </div>
+
+                <div class="section-divider">
+                    <div class="section-title">📜 Script Configuration</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Script Path <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="launch-script-path" placeholder="/path/to/test_script.sh"
+                        required>
+                </div>
+
+                <div class="section-divider">
+                    <div class="section-title">💾 SSD Information (optional)</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">SSD Serial Number</label>
+                        <input type="text" class="form-input" id="launch-ssd-sn" placeholder="S5XNNG0N123456">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">SSD EUI Number</label>
+                        <input type="text" class="form-input" id="launch-ssd-eui" placeholder="0x002538c00000001f">
+                    </div>
+                </div>
+
+                <div class="section-divider">
+                    <div class="section-title">🌐 Remote Log Configuration</div>
+                    <small style="color: #7f8c8d; font-size: 0.85em; margin-bottom: 10px; display: block;">💡 Optional:
+                        If not provided, UART logs will not be sent to remote server. Local logs will still be
+                        saved.</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Log Server IP</label>
+                        <input type="text" class="form-input" id="launch-log-ip" placeholder="192.168.1.100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Log Server Port</label>
+                        <input type="text" class="form-input" id="launch-log-port" placeholder="3333">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeLaunchModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">🚀 Launch Test</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentSlotId = null;
+        let currentFilter = 'all';
+        let allSlots = [];
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const autoRefresh = localStorage.getItem('autoRefresh') !== 'false';
+            const refreshInterval = parseInt(localStorage.getItem('refreshInterval') || '3');
+
+            // Apply settings
+            if (autoRefresh) {
+                // Auto-refresh will be set up with the loaded interval
+                return refreshInterval * 1000;
+            }
+            return null;
+        }
+
+        const refreshIntervalMs = loadSettings();
+
+        // Load all slots data
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_BASE}/api/slots`);
+                const data = await response.json();
+                renderSlots(data.slots);
+                updateStats(data.slots);
+            } catch (error) {
+                console.error('Failed to load data:', error);
+            }
+        }
+
+        // Filter slots by status
+        function filterSlots(status) {
+            currentFilter = status;
+
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('filter-' + status).classList.add('active');
+
+            // Render filtered slots
+            renderSlots(allSlots);
+        }
+
+        // Update filter counts
+        function updateFilterCounts(slots) {
+            const counts = {
+                all: slots.length,
+                idle: slots.filter(s => s.status === 'idle').length,
+                running: slots.filter(s => s.status === 'running').length,
+                success: slots.filter(s => s.status === 'success').length,
+                failed: slots.filter(s => s.status === 'failed').length
+            };
+
+            document.getElementById('count-all').textContent = `(${counts.all})`;
+            document.getElementById('count-idle').textContent = `(${counts.idle})`;
+            document.getElementById('count-running').textContent = `(${counts.running})`;
+            document.getElementById('count-success').textContent = `(${counts.success})`;
+            document.getElementById('count-failed').textContent = `(${counts.failed})`;
+        }
+
+        // Render slots table
+        function renderSlots(slots) {
+            allSlots = slots;
+            updateFilterCounts(slots);
+
+            // Filter slots based on current filter
+            const filteredSlots = currentFilter === 'all'
+                ? slots
+                : slots.filter(slot => slot.status === currentFilter);
+
+            const tbody = document.getElementById('slots-tbody');
+
+            if (filteredSlots.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #bdc3c7;">
+                            <div style="font-size: 2em; margin-bottom: 10px;">📭</div>
+                            <div>No slots match the current filter</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredSlots.map((slot, index) => {
+                const statusClass = slot.status;
+                const slotIndex = slots.findIndex(s => s.id === slot.id);
+
+                // Determine group boundaries (every 5 slots: 0-4, 5-9, 10-14, 15)
+                // Only apply visual grouping when showing all slots
+                const isGroupFirst = (currentFilter === 'all') && (slotIndex % 5 === 0);
+                const isGroupLast = (currentFilter === 'all') && (slotIndex % 5 === 4 || slotIndex === slots.length - 1);
+                const groupClass = `${isGroupFirst ? 'group-first' : ''} ${isGroupLast ? 'group-last' : ''}`;
+
+                // Determine action buttons based on status
+                let actionButtons = '';
+                if (slot.status === 'idle') {
+                    actionButtons = `
+                        <button class="table-btn launch" onclick="event.stopPropagation(); openLaunchModal(${slot.id})" data-tooltip="Launch test execution">Launch</button>
+                    `;
+                } else if (slot.status === 'running') {
+                    actionButtons = `<button class="table-btn stop" onclick="event.stopPropagation(); stopTest(${slot.id})" data-tooltip="Stop running test">Stop</button>`;
+                } else {
+                    // For success, failed, stopping status
+                    actionButtons = `
+                        <button class="table-btn clear" onclick="event.stopPropagation(); clearSlotData(${slot.id})" data-tooltip="Clear results, keep config">Clear</button>
+                        <button class="table-btn reset" onclick="event.stopPropagation(); resetSlot(${slot.id})" data-tooltip="Reset everything">Reset</button>
+                    `;
+                }
+
+                return `
+                    <tr onclick="handleSlotClick(${slot.id})" class="${groupClass}">
+                        <td class="slot-id-cell">Slot ${slot.id}</td>
+                        <td>
+                            <div class="status-led-container">
+                                <div class="status-led ${statusClass}"></div>
+                                <span class="status-text">${slot.status}</span>
+                            </div>
+                        </td>
+                        <td>${slot.owner ? slot.owner : '<span class="empty-value">Not assigned</span>'}</td>
+                        <td>${slot.test_case ? slot.test_case : '<span class="empty-value">None</span>'}</td>
+                        <td class="progress-cell">
+                            <div class="table-progress-bar">
+                                <div class="table-progress-fill" style="width: ${slot.progress}%"></div>
+                            </div>
+                            <div class="progress-text">${slot.progress}%</div>
+                        </td>
+                        <td>${slot.start_time ? formatDateTime(slot.start_time) : '<span class="empty-value">-</span>'}</td>
+                        <td class="table-actions">
+                            ${actionButtons}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Format date and time (2025/12/27 14:20)
+        function formatDateTime(isoString) {
+            if (!isoString) return '-';
+            const date = new Date(isoString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}/${month}/${day} ${hours}:${minutes}`;
+        }
+
+        // Toggle sidebar collapse
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        }
+
+        // Load external link in iframe (right panel)
+        function loadExternalLink(url) {
+            const dashboardContent = document.getElementById('dashboard-content');
+            const iframe = document.getElementById('external-iframe');
+
+            dashboardContent.style.display = 'none';
+            iframe.style.display = 'block';
+            iframe.src = url;
+        }
+
+        // Open external link in same tab
+        function openExternalLink(url) {
+            window.location.href = url;
+        }
+
+        // Show dashboard content
+        function showDashboard() {
+            const dashboardContent = document.getElementById('dashboard-content');
+            const iframe = document.getElementById('external-iframe');
+
+            iframe.style.display = 'none';
+            iframe.src = '';
+            dashboardContent.style.display = 'flex';
+        }
+
+        // Handle slot click - navigate to detail page
+        function handleSlotClick(slotId) {
+            window.location.href = `/slot/${slotId}`;
+        }
+
+        // Open launch modal
+        function openLaunchModal(slotId) {
+            currentSlotId = slotId;
+            document.getElementById('launch-slot-id').textContent = slotId;
+            document.getElementById('launch-modal').classList.add('active');
+            document.getElementById('launch-form').reset();
+        }
+
+        // Close launch modal
+        function closeLaunchModal() {
+            document.getElementById('launch-modal').classList.remove('active');
+            currentSlotId = null;
+        }
+
+        // Close modal when clicking background
+        function closeModalOnBackground(event, modalId) {
+            if (event.target.id === modalId) {
+                document.getElementById(modalId).classList.remove('active');
+                currentSlotId = null;
+            }
+        }
+
+        // Handle launch form submission
+        document.getElementById('launch-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const launchData = {
+                owner: document.getElementById('launch-owner').value,
+                test_case: document.getElementById('launch-testcase').value,
+                log_folder: document.getElementById('launch-log-folder').value,
+                script_path: document.getElementById('launch-script-path').value,
+                script_args: '',  // No longer used, kept for backend compatibility
+                ssd_serial: document.getElementById('launch-ssd-sn').value,
+                ssd_eui: document.getElementById('launch-ssd-eui').value,
+                log_ip: document.getElementById('launch-log-ip').value,
+                log_port: document.getElementById('launch-log-port').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/slots/${currentSlotId}/launch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(launchData)
+                });
+
+                if (response.ok) {
+                    closeLaunchModal();
+                    await loadData();
+                } else {
+                    const error = await response.json();
+                    alert('Failed to launch test: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Failed to launch test:', error);
+                alert('Failed to launch test');
+            }
+        });
+
+        // Stop test
+        async function stopTest(slotId) {
+            if (!confirm(`Stop test in Slot ${slotId}?`)) return;
+
+            try {
+                await fetch(`${API_BASE}/api/slots/${slotId}/stop`, {
+                    method: 'POST'
+                });
+                await loadData();
+            } catch (error) {
+                console.error('Failed to stop test:', error);
+                alert('Failed to stop test');
+            }
+        }
+
+        // Reset slot
+        async function resetSlot(slotId) {
+            if (!confirm(`Reset Slot ${slotId}? This will clear ALL data including owner and test info.`)) return;
+
+            try {
+                await fetch(`${API_BASE}/api/slots/${slotId}/reset`, {
+                    method: 'POST'
+                });
+                await loadData();
+            } catch (error) {
+                console.error('Failed to reset slot:', error);
+                alert('Failed to reset slot');
+            }
+        }
+
+        // Clear slot data (keep assignment)
+        async function clearSlotData(slotId) {
+            if (!confirm(`Clear Slot ${slotId}? This will clear owner and test results, but keep test configuration.`)) return;
+
+            try {
+                await fetch(`${API_BASE}/api/slots/${slotId}/clear`, {
+                    method: 'POST'
+                });
+                await loadData();
+            } catch (error) {
+                console.error('Failed to clear slot:', error);
+                alert('Failed to clear slot data');
+            }
+        }
+
+        // Reset all slots
+        async function resetAllSlots() {
+            if (!confirm('Are you sure you want to reset ALL slots?')) return;
+
+            try {
+                await fetch(`${API_BASE}/api/slots/reset-all`, {
+                    method: 'POST'
+                });
+                await loadData();
+            } catch (error) {
+                console.error('Failed to reset slots:', error);
+                alert('Failed to reset all slots');
+            }
+        }
+
+        // Update statistics
+        function updateStats(slots) {
+            const stats = { idle: 0, running: 0, success: 0, failed: 0 };
+            slots.forEach(slot => {
+                stats[slot.status]++;
+            });
+
+            document.getElementById('stat-idle').textContent = stats.idle;
+            document.getElementById('stat-running').textContent = stats.running;
+            document.getElementById('stat-completed').textContent = stats.success + stats.failed;
+        }
+
+        // Refresh data
+        function refreshData() {
+            loadData();
+        }
+
+        // Auto-refresh with settings
+        if (refreshIntervalMs) {
+            setInterval(() => {
+                loadData();
+            }, refreshIntervalMs);
+        }
+
+        // Initialize
+        loadData();
+    </script>
+</body>
+
+</html>
