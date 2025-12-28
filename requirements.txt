@@ -23,7 +23,7 @@ psutil==5.9.6
 pyserial==3.5
 python-dotenv==1.2.1
 python-telegram-bot==21.0
-requests==2.31.0
+requests==2.32.4
 typing_extensions==4.15.0
 urllib3==2.6.2
 Werkzeug==3.1.4
